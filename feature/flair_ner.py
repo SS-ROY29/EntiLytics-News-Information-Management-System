@@ -1,24 +1,28 @@
 from flair.data import Sentence
 from flair.nn import Classifier
 
-def identify_entities():
-    # load NER model, use 'ner-fast' for a smaller but faster BiLSTM model
+def identify_entities(input):
+    # Load the standard English NER model 
+    # 'ner-fast' for a smaller, faster BiLSTM model if preferred
     tagger = Classifier.load('ner')
+    
+    # Create a Flair Sentence object
+    sentence = Sentence(input)
 
-    # get user input
-    sentence = Sentence(input("Enter a sentence to identify entities: "))
-
-    # predict entities
+    # Predict entities
     tagger.predict(sentence)
 
-    print("\nIdentified Entities:")
-    if not sentence.get_spans('ner'): # if there are no entities extracted
+    results =[]
+
+    # Extract results
+    if not sentence.get_spans('ner'):
         print("No entities found.")
-    else: # output of predicted entities with label and confidence score
+    else:
         for entity in sentence.get_spans('ner'):
-            print(f"- {entity.text} [{entity.get_label('ner').value}] (Confidence: {entity.get_label('ner').score:.2f})")
-
-if __name__ == "__main__":
-    identify_entities()
-
-    
+            label = entity.get_label('ner')
+            results.append({
+            "text": entity.text,
+            "label": label.value,
+            "confidence": f"{label.score:.2f}"
+        })
+    return results
