@@ -1,72 +1,72 @@
+-- Reference Tables --
 CREATE TABLE EntityType (
-    EntityTypeID BIGSERIAL NOT NULL PRIMARY KEY,
+    EntityTypeID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    -- GENERATED ALWAYS AS IDENTITY = modern PostgreSQL standard
     TypeName VARCHAR(100) NOT NULL
 );
-
 CREATE TABLE Source (
-    SourceID BIGSERIAL NOT NULL PRIMARY KEY,
+    SourceID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     Name VARCHAR(255),
     URL TEXT
 );
-
+-- User Management --
 CREATE TABLE Account (
-    AccountID BIGSERIAL NOT NULL PRIMARY KEY,
+    AccountID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     Gmail VARCHAR(100) UNIQUE NOT NULL,
-    Account_Role VARCHAR(255) NOT NULL
+    Account_Role VARCHAR(255) NOT NULL DEFAULT 'user',
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
+CREATE INDEX idx_account_gmail ON Account(Gmail);
+-- Content --
 CREATE TABLE Entity (
-    EntityID BIGSERIAL NOT NULL PRIMARY KEY,
+    EntityID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     Name VARCHAR(255) NOT NULL,
     EntityTypeID BIGINT REFERENCES EntityType(EntityTypeID)
 );
-
 CREATE TABLE Article (
-    ArticleID BIGSERIAL NOT NULL PRIMARY KEY,
+    ArticleID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     Title TEXT,
     Content TEXT,
     SourceID BIGINT REFERENCES Source(SourceID),
-	DatePublished DATE
+    DatePublished DATE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
+-- NLP Results --
 CREATE TABLE EntityExtraction (
-    EntityExtractionID BIGSERIAL NOT NULL PRIMARY KEY,
-    ArticleID BIGINT REFERENCES Article(ArticleID),
+    EntityExtractionID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    ArticleID BIGINT REFERENCES Article(ArticleID) ON DELETE CASCADE,
+    -- ON DELETE CASCADE = deleting an Article from Admin page removes related summaries, rankings, and notes automatically.
     EntityID BIGINT REFERENCES Entity(EntityID),
     Position INT,
     Frequency INT
 );
-
 CREATE TABLE EntityImportance (
-    ImportanceID BIGSERIAL NOT NULL PRIMARY KEY,
-    ExtractionID BIGINT REFERENCES EntityExtraction(EntityExtractionID),
+    ImportanceID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    ExtractionID BIGINT REFERENCES EntityExtraction(EntityExtractionID) ON DELETE CASCADE,
     ImportanceScore FLOAT
 );
-
 CREATE TABLE RelationshipMap (
-    RelationshipID BIGSERIAL NOT NULL PRIMARY KEY,
-    ArticleID BIGINT REFERENCES Article(ArticleID),
+    RelationshipID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    ArticleID BIGINT REFERENCES Article(ArticleID) ON DELETE CASCADE,
     EntityA_ID BIGINT REFERENCES Entity(EntityID),
     EntityB_ID BIGINT REFERENCES Entity(EntityID)
 );
-
+-- User-specific Data --
 CREATE TABLE UserArticle (
-    UserArticleID BIGSERIAL NOT NULL PRIMARY KEY,
+    UserArticleID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     AccountID BIGINT REFERENCES Account(AccountID),
-    ArticleID BIGINT REFERENCES Article(ArticleID),
-    DateStored TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ArticleID BIGINT REFERENCES Article(ArticleID) ON DELETE CASCADE,
+    DateStored TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE TABLE Annotation (
-    AnnotationID BIGSERIAL NOT NULL PRIMARY KEY,
+    AnnotationID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     AccountID BIGINT REFERENCES Account(AccountID),
-    ArticleID BIGINT REFERENCES Article(ArticleID),
-    Note VARCHAR(255)
+    ArticleID BIGINT REFERENCES Article(ArticleID) ON DELETE CASCADE,
+    Note TEXT
 );
-
 CREATE TABLE Summary (
-    SummaryID BIGSERIAL NOT NULL PRIMARY KEY,
+    SummaryID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     AccountID BIGINT REFERENCES Account(AccountID),
-    ArticleID BIGINT REFERENCES Article(ArticleID),
+    ArticleID BIGINT REFERENCES Article(ArticleID) ON DELETE CASCADE,
     SummaryText TEXT
 );
